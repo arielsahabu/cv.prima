@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal Karir - Panel HRD</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase SDK CDN -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
 
@@ -17,7 +14,7 @@
       <div class="flex items-center justify-between h-16">
         <div class="flex items-center space-x-3">
           <span class="text-2xl">🔒</span>
-          <span class="font-bold text-xl tracking-tight">Cv.Prima - Panel HRD (Online Cloud)</span>
+          <span class="font-bold text-xl tracking-tight">Cv.Prima - Panel HRD (Admin)</span>
         </div>
       </div>
     </div>
@@ -30,7 +27,7 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold text-slate-800">Dashboard Rekrutmen HRD</h1>
-        <p class="text-slate-500 text-sm">Sinkronisasi data online real-time dengan pelamar.</p>
+        <p class="text-slate-500 text-sm">Kelola lowongan aktif, hapus posisi, buka berkas pelamar, dan atur jadwal interview.</p>
       </div>
       <button type="button" onclick="openModalCreateJob()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-md cursor-pointer">
         <span>➕</span> Buat Lowongan Baru
@@ -122,7 +119,7 @@
         <p id="interview-applicant-name" class="text-sm text-indigo-600 font-semibold mb-4"></p>
         
         <form id="form-interview" onsubmit="handleInterviewSubmit(event)" class="space-y-4">
-          <input type="hidden" id="interview_applicant_id">
+          <input type="hidden" id="interview_applicant_idx">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal & Waktu *</label>
             <input type="datetime-local" id="interview_datetime" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
@@ -143,11 +140,11 @@
       </div>
     </div>
 
-    <!-- Tabel Daftar Lowongan Kerja -->
+    <!-- Tabel Daftar Lowongan Kerja (Kelola/Hapus Lowongan) -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex justify-between items-center">
         <h2 class="font-bold text-slate-800">Daftar Lowongan Kerja Aktif</h2>
-        <span class="text-xs text-slate-500">Cloud Sync Active</span>
+        <span class="text-xs text-slate-500">Kelola Posisi Pekerjaan</span>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
@@ -167,8 +164,8 @@
     <!-- Tabel Pelamar Masuk -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex justify-between items-center">
-        <h2 class="font-bold text-slate-800">Daftar Berkas Pelamar Masuk (Real-time Cloud)</h2>
-        <span class="text-xs text-slate-500">Otomatis Masuk dari Pelamar</span>
+        <h2 class="font-bold text-slate-800">Daftar Berkas Pelamar Masuk</h2>
+        <span class="text-xs text-slate-500">Real-time Sync Active</span>
       </div>
       
       <div class="overflow-x-auto">
@@ -190,63 +187,54 @@
   </main>
 
   <script>
-    // ==========================================
-    // KONFIGURASI FIREBASE ANDA
-    // ==========================================
-    const firebaseConfig = {
-      apiKey: "GANTI_DENGAN_API_KEY_ANDA",
-      authDomain: "GANTI_DENGAN_AUTH_DOMAIN_ANDA",
-      projectId: "GANTI_DENGAN_PROJECT_ID_ANDA",
-      storageBucket: "GANTI_DENGAN_STORAGE_BUCKET_ANDA",
-      messagingSenderId: "GANTI_DENGAN_MESSAGING_SENDER_ID_ANDA",
-      appId: "GANTI_DENGAN_APP_ID_ANDA"
-    };
+    function getJobs() {
+      let jobs = localStorage.getItem('corp_jobs');
+      if (!jobs) {
+        jobs = [
+          { id: 1, title: "Frontend React Developer", dept: "Technology", type: "Full-time", location: "Jakarta (Hybrid)", desc: "Menguasai React.js, Tailwind CSS, REST API, dan memiliki pengalaman minimal 2 tahun." },
+          { id: 2, title: "HR Specialist & Recruiter", dept: "Human Resources", type: "Full-time", location: "Jakarta South", desc: "Berpengalaman dalam mengelola end-to-end proses rekrutmen dan administrasi karyawan." }
+        ];
+        localStorage.setItem('corp_jobs', JSON.stringify(jobs));
+      }
+      return JSON.parse(jobs);
+    }
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    let cachedJobs = [];
-    let cachedApplicants = [];
+    function getApplicants() {
+      let apps = localStorage.getItem('corp_applicants');
+      if (!apps) {
+        apps = [];
+        localStorage.setItem('corp_applicants', JSON.stringify(apps));
+      }
+      return JSON.parse(apps);
+    }
 
     window.onload = function() {
-      // Real-time listener untuk lowongan
-      db.collection('jobs').onSnapshot(snapshot => {
-        cachedJobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        // Auto-seed data jika kosong
-        if (cachedJobs.length === 0) {
-          db.collection('jobs').add({
-            title: "Frontend React Developer", dept: "Technology", type: "Full-time", location: "Jakarta (Hybrid)", desc: "Menguasai React.js, Tailwind CSS, REST API, dan memiliki pengalaman minimal 2 tahun."
-          });
-          db.collection('jobs').add({
-            title: "HR Specialist & Recruiter", dept: "Human Resources", type: "Full-time", location: "Jakarta South", desc: "Berpengalaman dalam mengelola end-to-end proses rekrutmen dan administrasi karyawan."
-          });
-          return;
-        }
+      renderHRDJobs();
+      renderHRDTable();
+      updateStats();
+    };
 
+    // Sinkronisasi otomatis antar tab
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'corp_applicants' || e.key === 'corp_jobs') {
         renderHRDJobs();
-        updateStats();
-      });
-
-      // Real-time listener untuk pelamar masuk
-      db.collection('applicants').onSnapshot(snapshot => {
-        cachedApplicants = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderHRDTable();
         updateStats();
-      });
-    };
+      }
+    });
 
     function renderHRDJobs() {
       const tbody = document.getElementById('job-table-body');
       if (!tbody) return;
+      const jobs = getJobs();
       tbody.innerHTML = "";
 
-      if(cachedJobs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400">Belum ada lowongan kerja.</td></tr>`;
+      if(jobs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400">Belum ada lowongan kerja yang diposting.</td></tr>`;
         return;
       }
 
-      cachedJobs.forEach((job) => {
+      jobs.forEach((job) => {
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50/80 transition-colors";
         tr.innerHTML = `
@@ -256,7 +244,7 @@
             <div>${job.type} • 📍 ${job.location}</div>
           </td>
           <td class="p-4 text-center">
-            <button type="button" onclick="deleteJob('${job.id}')" class="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-xs font-semibold cursor-pointer shadow">
+            <button type="button" onclick="deleteJob(${job.id})" class="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-xs font-semibold cursor-pointer shadow">
               🗑️ Hapus Lowongan
             </button>
           </td>
@@ -265,37 +253,33 @@
       });
     }
 
-    // Fungsi Hapus Lowongan yang Diperbarui dan Diuji Aman
-   window.deleteJob = function(jobId) {
-  if (!jobId) {
-    alert("ID Lowongan tidak valid.");
-    return;
-  }
-  
-  if (confirm("Yakin ingin menghapus lowongan ini dari sistem online?")) {
-    db.collection('jobs').doc(jobId).delete()
-      .then(() => {
-        alert("Lowongan berhasil dihapus dari database online!");
-      })
-      .catch(err => {
-        // Ini akan memunculkan pesan error asli dari Firebase jika akses ditolak
-        alert("Gagal menghapus lowongan!\nPesan Error: " + err.message);
-        console.error("Error deleting job:", err);
-      });
-  }
-};
+    window.deleteJob = function(jobId) {
+      let jobs = getJobs();
+      const jobToDelete = jobs.find(j => j.id === jobId);
+      if(confirm(`Yakin ingin menghapus lowongan "${jobToDelete ? jobToDelete.title : 'ini'}"? Lowongan yang dihapus akan otomatis hilang dari Panel Pelamar.`)) {
+        jobs = jobs.filter(j => j.id !== jobId);
+        localStorage.setItem('corp_jobs', JSON.stringify(jobs));
+        renderHRDJobs();
+        updateStats();
+        alert("Lowongan kerja berhasil dihapus.");
+      }
+    };
 
     function renderHRDTable() {
       const tbody = document.getElementById('applicant-table-body');
       if (!tbody) return;
+      const applicants = getApplicants();
       tbody.innerHTML = "";
 
-      if(cachedApplicants.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Belum ada berkas lamaran yang masuk secara online.</td></tr>`;
+      if(applicants.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Belum ada berkas lamaran yang masuk.</td></tr>`;
         return;
       }
 
-      cachedApplicants.forEach((app) => {
+      applicants.forEach((app, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50/80 transition-colors";
+
         let statusBadge = app.status === 'Submitted' 
           ? '<span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">Menunggu Review</span>'
           : app.status === 'Interview'
@@ -304,8 +288,6 @@
           ? '<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-medium">Diterima (Hired)</span>'
           : '<span class="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-medium">Ditolak</span>';
 
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50/80 transition-colors";
         tr.innerHTML = `
           <td class="p-4 font-bold text-slate-800">${app.name}</td>
           <td class="p-4 text-indigo-600 font-medium">${app.jobTitle}</td>
@@ -314,7 +296,7 @@
             <div class="text-slate-400">${app.phone}</div>
           </td>
           <td class="p-4">
-            <button type="button" onclick="openModalBerkas('${app.id}')" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer">
+            <button type="button" onclick="openModalBerkas(${idx})" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer">
               📁 Buka Berkas (${countFiles(app.files)})
             </button>
           </td>
@@ -324,10 +306,10 @@
           </td>
           <td class="p-4 text-center">
             <div class="flex justify-center space-x-1.5">
-              <button type="button" onclick="openModalInterview('${app.id}')" class="p-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg cursor-pointer" title="Atur Interview">📅</button>
-              <button type="button" onclick="updateApplicantStatus('${app.id}', 'Accepted')" class="p-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg cursor-pointer" title="Terima">✅</button>
-              <button type="button" onclick="updateApplicantStatus('${app.id}', 'Rejected')" class="p-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg cursor-pointer" title="Tolak">❌</button>
-              <button type="button" onclick="deleteApplicant('${app.id}')" class="p-1.5 bg-slate-400 hover:bg-rose-600 text-white rounded-lg cursor-pointer" title="Hapus Berkas">🗑️</button>
+              <button type="button" onclick="openModalInterview(${idx})" class="p-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg cursor-pointer" title="Atur Interview">📅</button>
+              <button type="button" onclick="updateApplicantStatus(${idx}, 'Accepted')" class="p-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg cursor-pointer" title="Terima">✅</button>
+              <button type="button" onclick="updateApplicantStatus(${idx}, 'Rejected')" class="p-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg cursor-pointer" title="Tolak">❌</button>
+              <button type="button" onclick="deleteApplicant(${idx})" class="p-1.5 bg-slate-400 hover:bg-rose-600 text-white rounded-lg cursor-pointer" title="Hapus Berkas">🗑️</button>
             </div>
           </td>
         `;
@@ -349,9 +331,11 @@
     }
 
     function updateStats() {
-      document.getElementById('stat-active-jobs').innerText = cachedJobs.length;
-      document.getElementById('stat-total-applicants').innerText = cachedApplicants.length;
-      document.getElementById('stat-pending-review').innerText = cachedApplicants.filter(a => a.status === 'Submitted').length;
+      const jobs = getJobs();
+      const applicants = getApplicants();
+      document.getElementById('stat-active-jobs').innerText = jobs.length;
+      document.getElementById('stat-total-applicants').innerText = applicants.length;
+      document.getElementById('stat-pending-review').innerText = applicants.filter(a => a.status === 'Submitted').length;
     }
 
     window.openModalCreateJob = function() {
@@ -368,25 +352,27 @@
     window.handleCreateJobSubmit = function(e) {
       e.preventDefault();
       const newJob = {
+        id: Date.now(),
         title: document.getElementById('job_title').value,
         dept: document.getElementById('job_dept').value,
         type: document.getElementById('job_type').value,
         location: document.getElementById('job_location').value,
-        desc: document.getElementById('job_desc').value,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        desc: document.getElementById('job_desc').value
       };
 
-      db.collection('jobs').add(newJob)
-        .then(() => {
-          alert("Lowongan baru berhasil dipublikasikan secara online!");
-          closeModalCreateJob();
-        })
-        .catch(err => alert("Gagal mempublikasikan: " + err.message));
+      let jobs = getJobs();
+      jobs.unshift(newJob);
+      localStorage.setItem('corp_jobs', JSON.stringify(jobs));
+
+      alert("Lowongan baru berhasil dipublikasikan!");
+      closeModalCreateJob();
+      renderHRDJobs();
+      updateStats();
     };
 
-    window.openModalBerkas = function(appId) {
-      const app = cachedApplicants.find(a => a.id === appId);
-      if(!app) return;
+    window.openModalBerkas = function(idx) {
+      const applicants = getApplicants();
+      const app = applicants[idx];
       document.getElementById('berkas-applicant-name').innerText = `Pelamar: ${app.name} (${app.jobTitle})`;
       
       const container = document.getElementById('berkas-list-container');
@@ -407,8 +393,10 @@
         div.className = "flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm";
         if(item.file) {
           div.innerHTML = `
-            <span class="font-medium text-slate-700">${item.label} (${item.file.name} - ${item.file.size})</span>
-            <span class="text-xs text-indigo-600 font-semibold">Tersimpan Online</span>
+            <span class="font-medium text-slate-700">${item.label} (${item.file.name})</span>
+            <a href="${item.file.url}" target="_blank" class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 cursor-pointer">
+              👁️ Lihat Berkas
+            </a>
           `;
         } else {
           div.innerHTML = `
@@ -428,11 +416,11 @@
       document.getElementById('modal-berkas').classList.remove('flex');
     };
 
-    window.openModalInterview = function(appId) {
-      const app = cachedApplicants.find(a => a.id === appId);
-      if(!app) return;
+    window.openModalInterview = function(idx) {
+      const applicants = getApplicants();
+      const app = applicants[idx];
       document.getElementById('interview-applicant-name').innerText = `Pelamar: ${app.name} (${app.jobTitle})`;
-      document.getElementById('interview_applicant_id').value = appId;
+      document.getElementById('interview_applicant_idx').value = idx;
       
       document.getElementById('modal-interview').classList.remove('hidden');
       document.getElementById('modal-interview').classList.add('flex');
@@ -446,39 +434,42 @@
 
     window.handleInterviewSubmit = function(e) {
       e.preventDefault();
-      const appId = document.getElementById('interview_applicant_id').value;
+      const idx = document.getElementById('interview_applicant_idx').value;
       const datetime = document.getElementById('interview_datetime').value;
       const location = document.getElementById('interview_location').value;
       const notes = document.getElementById('interview_notes').value;
 
-      const interviewData = {
-        status: 'Interview',
-        interview: {
-          date: new Date(datetime).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' }),
-          location: location,
-          notes: notes
-        }
+      let applicants = getApplicants();
+      applicants[idx].status = 'Interview';
+      applicants[idx].interview = {
+        date: new Date(datetime).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' }),
+        location: location,
+        notes: notes
       };
 
-      db.collection('applicants').doc(appId).update(interviewData)
-        .then(() => {
-          alert("Jadwal interview berhasil dikirim dan tersinkron ke pelamar!");
-          closeModalInterview();
-        })
-        .catch(err => alert("Gagal mengirim jadwal: " + err.message));
+      localStorage.setItem('corp_applicants', JSON.stringify(applicants));
+      alert("Jadwal interview berhasil dikirim!");
+      closeModalInterview();
+      renderHRDTable();
+      updateStats();
     };
 
-    window.updateApplicantStatus = function(appId, newStatus) {
-      db.collection('applicants').doc(appId).update({ status: newStatus })
-        .then(() => alert("Status pelamar diperbarui."))
-        .catch(err => alert("Gagal memperbarui status: " + err.message));
+    window.updateApplicantStatus = function(index, newStatus) {
+      let applicants = getApplicants();
+      applicants[index].status = newStatus;
+      localStorage.setItem('corp_applicants', JSON.stringify(applicants));
+      renderHRDTable();
+      updateStats();
     };
 
-    window.deleteApplicant = function(appId) {
-      if(confirm("Yakin ingin menghapus berkas pelamar ini?")) {
-        db.collection('applicants').doc(appId).delete()
-          .then(() => alert("Berkas pelamar berhasil dihapus."))
-          .catch(err => alert("Gagal menghapus: " + err.message));
+    window.deleteApplicant = function(index) {
+      let applicants = getApplicants();
+      if(confirm(`Yakin ingin menghapus berkas atas nama "${applicants[index].name}"?`)) {
+        applicants.splice(index, 1);
+        localStorage.setItem('corp_applicants', JSON.stringify(applicants));
+        renderHRDTable();
+        updateStats();
+        alert("Berkas pelamar berhasil dihapus.");
       }
     };
   </script>
