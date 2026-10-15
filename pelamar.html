@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Karir - Panel Pelamar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
+
+  <!-- NAVBAR -->
+  <nav class="bg-indigo-900 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-3">
+          <span class="text-2xl">💼</span>
+          <span class="font-bold text-xl tracking-tight">CorpCareer - Portal Pelamar</span>
+        </div>
+        <div>
+          <a href="hrd.html" target="_blank" class="text-xs bg-indigo-800 hover:bg-indigo-700 text-indigo-200 px-3 py-2 rounded-lg font-medium transition-colors border border-indigo-700">
+            🔒 Masuk Panel HRD (Admin)
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- CONTAINER UTAMA -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    
+    <!-- Banner & Cek Status -->
+    <div class="bg-gradient-to-r from-indigo-700 to-purple-800 rounded-2xl p-8 text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-6">
+      <div>
+        <h1 class="text-3xl font-extrabold mb-2">Temukan Karir Impian Anda</h1>
+        <p class="text-indigo-100 max-w-xl">Bergabunglah bersama tim profesional kami dan kembangkan potensi terbaik Anda.</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-full md:w-85">
+        <label class="block text-xs font-semibold mb-1 text-indigo-100">Cek Status & Jadwal Interview via No. HP</label>
+        <div class="flex gap-2">
+          <input type="text" id="check_phone_input" placeholder="Contoh: 081234567890" class="w-full bg-white text-slate-800 px-3 py-2 rounded-lg text-xs outline-none">
+          <button onclick="checkStatusByPhone()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer">Cek</button>
+        </div>
+        <p class="text-[10px] text-indigo-200 mt-1.5 italic">*Contoh sampel terdaftar: 081234567890</p>
+      </div>
+    </div>
+
+    <!-- Hasil Pengecekan Status -->
+    <div id="status-result-card" class="hidden bg-white p-6 rounded-2xl shadow-md border border-indigo-100 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+          <span>📋</span> Hasil Pengecekan Status & Jadwal Interview
+        </h3>
+        <button onclick="closeStatusResult()" class="text-slate-400 hover:text-slate-600 text-sm font-semibold cursor-pointer">Tutup</button>
+      </div>
+      <div id="status-result-content" class="space-y-4"></div>
+    </div>
+
+    <!-- Daftar Lowongan -->
+    <div>
+      <h2 class="text-xl font-bold mb-4 text-slate-700 flex items-center gap-2">
+        <span>🔍</span> Lowongan Kerja Tersedia
+      </h2>
+      <div id="job-list-pelamar" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+
+    <!-- Modal Form Lamaran -->
+    <div id="modal-lamar" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 overflow-y-auto">
+      <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-8 relative max-h-[90vh] overflow-y-auto">
+        <button type="button" onclick="closeModalLamar()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 cursor-pointer text-xl font-bold">&times;</button>
+        
+        <div class="border-b pb-4 mb-6">
+          <h3 class="text-2xl font-bold text-slate-800">Formulir Lamaran Kerja</h3>
+          <p id="modal-job-title" class="text-indigo-600 font-semibold"></p>
+        </div>
+
+        <form id="form-pelamar" onsubmit="handleApplySubmit(event)" class="space-y-6">
+          <div class="space-y-4">
+            <h4 class="font-bold text-slate-700 border-b pb-1 text-sm uppercase tracking-wider">1. Informasi Kontak</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap *</label>
+                <input type="text" id="applicant_name" required placeholder="Budi Santoso" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Nomor WhatsApp / HP (Untuk Cek Status) *</label>
+                <input type="tel" id="applicant_phone" required placeholder="081234567890" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Alamat Email *</label>
+              <input type="email" id="applicant_email" required placeholder="budi@example.com" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <h4 class="font-bold text-slate-700 border-b pb-1 text-sm uppercase tracking-wider">2. Berkas Wajib</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">CV / Resume (PDF) *</label>
+                <input type="file" id="file_cv" accept=".pdf" required class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:bg-indigo-50 file:text-indigo-700">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">KTP / SIM *</label>
+                <input type="file" id="file_ktp" accept=".pdf,.jpg,.png" required class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:bg-indigo-50 file:text-indigo-700">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Pas Foto Terbaru *</label>
+                <input type="file" id="file_photo" accept=".jpg,.png" required class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:bg-indigo-50 file:text-indigo-700">
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <h4 class="font-bold text-slate-700 border-b pb-1 text-sm uppercase tracking-wider">3. Berkas Pendukung (Lainnya)</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Ijazah & Transkrip Nilai (PDF)</label>
+                <input type="file" id="file_ijazah" accept=".pdf" class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:bg-indigo-50 file:text-indigo-700">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Surat Pengalaman Kerja</label>
+                <input type="file" id="file_experience" accept=".pdf" class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:bg-indigo-50 file:text-indigo-700">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">BPJS Kesehatan</label>
+                <input type="file" id="file_bpjs_kesehatan" accept=".pdf,.jpg,.png" class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:bg-indigo-50 file:text-indigo-700">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">BPJS Ketenagakerjaan</label>
+                <input type="file" id="file_bpjs_tk" accept=".pdf,.jpg,.png" class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:bg-indigo-50 file:text-indigo-700">
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 pt-4 border-t">
+            <button type="button" onclick="closeModalLamar()" class="px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">Batal</button>
+            <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg cursor-pointer">Kirim Lamaran</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let selectedJobForApply = null;
+
+    function getJobs() {
+      let jobs = localStorage.getItem('corp_jobs');
+      if (!jobs) {
+        jobs = [
+          { id: 1, title: "Frontend React Developer", dept: "Technology", type: "Full-time", location: "Jakarta (Hybrid)", desc: "Menguasai React.js, Tailwind CSS, REST API, dan memiliki pengalaman minimal 2 tahun." },
+          { id: 2, title: "HR Specialist & Recruiter", dept: "Human Resources", type: "Full-time", location: "Jakarta South", desc: "Berpengalaman dalam mengelola end-to-end proses rekrutmen dan administrasi karyawan." }
+        ];
+        localStorage.setItem('corp_jobs', JSON.stringify(jobs));
+      }
+      return JSON.parse(jobs);
+    }
+
+    function getApplicants() {
+      let apps = localStorage.getItem('corp_applicants');
+      if (!apps) {
+        apps = [
+          {
+            id: 101,
+            jobTitle: "Frontend React Developer",
+            name: "Budi Santoso",
+            phone: "081234567890",
+            email: "budi@example.com",
+            status: "Interview",
+            interview: {
+              date: "Jumat, 17 Oktober 2026 pukul 10:00 WIB",
+              location: "Google Meet: meet.google.com/abc-defg-hij",
+              notes: "Harap menyiapkan portofolio project React.js serta dokumen asli."
+            },
+            files: {
+              cv: { name: "cv_budi.pdf", url: "#" },
+              ktp: { name: "ktp_budi.jpg", url: "#" },
+              photo: { name: "foto_budi.jpg", url: "#" },
+              ijazah: { name: "ijazah_budi.pdf", url: "#" },
+              experience: null,
+              bpjsKesehatan: { name: "bpjs_kes_budi.pdf", url: "#" },
+              bpjsTk: { name: "bpjs_tk_budi.pdf", url: "#" }
+            }
+          }
+        ];
+        localStorage.setItem('corp_applicants', JSON.stringify(apps));
+      }
+      return JSON.parse(apps);
+    }
+
+    window.onload = function() {
+      renderPelamarJobs();
+    };
+
+    function renderPelamarJobs() {
+      const container = document.getElementById('job-list-pelamar');
+      if (!container) return;
+      const jobs = getJobs();
+      container.innerHTML = "";
+
+      jobs.forEach(job => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-start mb-3">
+              <span class="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2.5 py-1 rounded-md">${job.dept}</span>
+              <span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-md font-medium">${job.type}</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-1">${job.title}</h3>
+            <p class="text-xs text-slate-500 mb-3">📍 ${job.location}</p>
+            <p class="text-sm text-slate-600 line-clamp-3 mb-4">${job.desc}</p>
+          </div>
+          <button type="button" onclick="openModalLamar(${job.id})" class="w-full bg-slate-900 hover:bg-indigo-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer">
+            Lamar Posisi Ini ➡️
+          </button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    window.openModalLamar = function(jobId) {
+      const jobs = getJobs();
+      selectedJobForApply = jobs.find(j => j.id === jobId);
+      document.getElementById('modal-job-title').innerText = `Posisi: ${selectedJobForApply.title}`;
+      document.getElementById('modal-lamar').classList.remove('hidden');
+      document.getElementById('modal-lamar').classList.add('flex');
+    };
+
+    window.closeModalLamar = function() {
+      document.getElementById('modal-lamar').classList.add('hidden');
+      document.getElementById('modal-lamar').classList.remove('flex');
+      document.getElementById('form-pelamar').reset();
+    };
+
+    window.handleApplySubmit = function(e) {
+      e.preventDefault();
+      
+      const getFileObj = (fileInputId) => {
+        const file = document.getElementById(fileInputId).files[0];
+        if(!file) return null;
+        return { name: file.name, url: URL.createObjectURL(file) };
+      };
+
+      const newApplicant = {
+        id: Date.now(),
+        jobTitle: selectedJobForApply.title,
+        name: document.getElementById('applicant_name').value,
+        phone: document.getElementById('applicant_phone').value,
+        email: document.getElementById('applicant_email').value,
+        status: 'Submitted',
+        interview: null,
+        files: {
+          cv: getFileObj('file_cv'),
+          ktp: getFileObj('file_ktp'),
+          photo: getFileObj('file_photo'),
+          ijazah: getFileObj('file_ijazah'),
+          experience: getFileObj('file_experience'),
+          bpjsKesehatan: getFileObj('file_bpjs_kesehatan'),
+          bpjsTk: getFileObj('file_bpjs_tk')
+        }
+      };
+
+      let applicants = getApplicants();
+      applicants.push(newApplicant);
+      localStorage.setItem('corp_applicants', JSON.stringify(applicants));
+
+      alert("Berhasil! Lamaran Anda telah dikirim ke HRD.");
+      closeModalLamar();
+    };
+
+    window.checkStatusByPhone = function() {
+      const phoneInput = document.getElementById('check_phone_input').value.trim();
+      const resultCard = document.getElementById('status-result-card');
+      const resultContent = document.getElementById('status-result-content');
+
+      if(!phoneInput) {
+        alert("Silakan masukkan Nomor HP/WhatsApp Anda.");
+        return;
+      }
+
+      const applicants = getApplicants();
+      const matchedApps = applicants.filter(app => app.phone === phoneInput);
+
+      resultCard.classList.remove('hidden');
+      resultContent.innerHTML = "";
+
+      if(matchedApps.length === 0) {
+        resultContent.innerHTML = `<div class="text-center py-6 text-slate-500">⚠️ Tidak ditemukan data lamaran dengan Nomor HP <b>${phoneInput}</b>.</div>`;
+        return;
+      }
+
+      matchedApps.forEach(app => {
+        let statusBadge = app.status === 'Submitted' 
+          ? '<span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-md text-xs font-bold">Menunggu Review HRD</span>'
+          : app.status === 'Interview'
+          ? '<span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-bold">Panggilan Interview Aktif</span>'
+          : app.status === 'Accepted'
+          ? '<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-md text-xs font-bold">Diterima Kerja (Hired)</span>'
+          : '<span class="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-md text-xs font-bold">Lamaran Ditolak</span>';
+
+        let interviewBox = app.interview ? `
+          <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl space-y-2">
+            <h4 class="font-bold text-blue-900 text-sm">🗓️ Jadwal Interview Resmi</h4>
+            <div class="text-xs text-slate-700 space-y-1 pl-4">
+              <p><b>Waktu:</b> <span class="text-indigo-700 font-semibold">${app.interview.date}</span></p>
+              <p><b>Lokasi/Link:</b> ${app.interview.location}</p>
+              ${app.interview.notes ? `<p><b>Catatan:</b> ${app.interview.notes}</p>` : ''}
+            </div>
+          </div>
+        ` : '';
+
+        const div = document.createElement('div');
+        div.className = "p-5 bg-slate-50 rounded-xl border border-slate-200 space-y-3";
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-xs text-indigo-600 font-semibold uppercase">${app.jobTitle}</span>
+              <h4 class="font-bold text-slate-800 text-lg">${app.name}</h4>
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+          <div class="text-xs text-slate-500 grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
+            <div>Email: ${app.email}</div>
+            <div>No. HP: ${app.phone}</div>
+          </div>
+          ${interviewBox}
+        `;
+        resultContent.appendChild(div);
+      });
+    };
+
+    window.closeStatusResult = function() {
+      document.getElementById('status-result-card').classList.add('hidden');
+    };
+  </script>
+</body>
+</html>
