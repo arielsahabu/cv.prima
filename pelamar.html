@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal Karir - Panel Pelamar</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDK CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
 
@@ -14,10 +17,7 @@
       <div class="flex items-center justify-between h-16">
         <div class="flex items-center space-x-3">
           <span class="text-2xl">💼</span>
-          <span class="font-bold text-xl tracking-tight">Cv.Prima Portal</span>
-        </div>
-        <div class="text-xs text-indigo-200">
-          Panel Pelamar & Pencarian Kerja
+          <span class="font-bold text-xl tracking-tight">CorpCareer Portal (Online)</span>
         </div>
       </div>
     </div>
@@ -31,7 +31,7 @@
       <div class="space-y-2">
         <span class="bg-indigo-500/30 text-indigo-100 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider border border-indigo-400/30">Peluang Karir</span>
         <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Temukan Karir Impian Anda</h1>
-        <p class="text-indigo-100 max-w-xl text-sm sm:text-base">Bergabunglah bersama tim profesional kami dan kembangkan potensi terbaik Anda.</p>
+        <p class="text-indigo-100 max-w-xl text-sm sm:text-base">Kirimkan lamaran Anda secara online dan terhubung langsung dengan tim HRD kami.</p>
       </div>
 
       <div class="bg-white/10 backdrop-blur-md p-5 rounded-xl border border-white/20 w-full md:w-85 shadow-inner">
@@ -58,7 +58,7 @@
     <!-- Daftar Lowongan -->
     <div class="space-y-4">
       <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-        <span>🔍</span> Lowongan Kerja Tersedia
+        <span>🔍</span> Lowongan Kerja Tersedia (Real-time Cloud)
       </h2>
       <div id="job-list-pelamar" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </div>
@@ -69,7 +69,7 @@
         <button type="button" onclick="closeModalLamar()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 cursor-pointer text-xl font-bold">&times;</button>
         
         <div class="border-b pb-4 mb-6">
-          <h3 class="text-2xl font-bold text-slate-800">Formulir Lamaran Kerja</h3>
+          <h3 class="text-2xl font-bold text-slate-800">Formulir Lamaran Kerja Online</h3>
           <p id="modal-job-title" class="text-indigo-600 font-semibold text-sm mt-0.5"></p>
         </div>
 
@@ -142,47 +142,50 @@
   </main>
 
   <script>
+    // ==========================================
+    // KONFIGURASI FIREBASE ANDA
+    // ==========================================
+    const firebaseConfig = {
+  apiKey: "AIzaSyDTuxZWU_qVS7u72dKh015MqxMiypWai84",
+  authDomain: "lowongankerja-90010.firebaseapp.com",
+  projectId: "lowongankerja-90010",
+  storageBucket: "lowongankerja-90010.firebasestorage.app",
+  messagingSenderId: "462339758508",
+  appId: "1:462339758508:web:e98e2a1dbc0ee862118209",
+  measurementId: "G-9NVFLTHDRZ"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     let selectedJobForApply = null;
-
-    function getJobs() {
-      let jobs = localStorage.getItem('corp_jobs');
-      if (!jobs) {
-        jobs = [
-          { id: 1, title: "Frontend React Developer", dept: "Technology", type: "Full-time", location: "Jakarta (Hybrid)", desc: "Menguasai React.js, Tailwind CSS, REST API, dan memiliki pengalaman minimal 2 tahun." },
-          { id: 2, title: "HR Specialist & Recruiter", dept: "Human Resources", type: "Full-time", location: "Jakarta South", desc: "Berpengalaman dalam mengelola end-to-end proses rekrutmen dan administrasi karyawan." }
-        ];
-        localStorage.setItem('corp_jobs', JSON.stringify(jobs));
-      }
-      return JSON.parse(jobs);
-    }
-
-    function getApplicants() {
-      let apps = localStorage.getItem('corp_applicants');
-      if (!apps) {
-        apps = [];
-        localStorage.setItem('corp_applicants', JSON.stringify(apps));
-      }
-      return JSON.parse(apps);
-    }
+    let cachedJobs = [];
 
     window.onload = function() {
-      renderPelamarJobs();
-    };
-
-    // Sinkronisasi otomatis jika ada perubahan data lowongan di tab lain
-    window.addEventListener('storage', function(e) {
-      if (e.key === 'corp_jobs') {
+      // Real-time listener untuk lowongan dari Firebase Firestore
+      db.collection('jobs').onSnapshot(snapshot => {
+        cachedJobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Default data jika database kosong
+        if (cachedJobs.length === 0) {
+          db.collection('jobs').add({
+            title: "Frontend React Developer", dept: "Technology", type: "Full-time", location: "Jakarta (Hybrid)", desc: "Menguasai React.js, Tailwind CSS, REST API, dan memiliki pengalaman minimal 2 tahun."
+          });
+          db.collection('jobs').add({
+            title: "HR Specialist & Recruiter", dept: "Human Resources", type: "Full-time", location: "Jakarta South", desc: "Berpengalaman dalam mengelola end-to-end proses rekrutmen dan administrasi karyawan."
+          });
+          return;
+        }
         renderPelamarJobs();
-      }
-    });
+      });
+    };
 
     function renderPelamarJobs() {
       const container = document.getElementById('job-list-pelamar');
       if (!container) return;
-      const jobs = getJobs();
       container.innerHTML = "";
 
-      jobs.forEach(job => {
+      cachedJobs.forEach(job => {
         const card = document.createElement('div');
         card.className = "bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between";
         card.innerHTML = `
@@ -195,7 +198,7 @@
             <p class="text-xs text-slate-500 mb-3">📍 ${job.location}</p>
             <p class="text-sm text-slate-600 line-clamp-3 mb-6">${job.desc}</p>
           </div>
-          <button type="button" onclick="openModalLamar(${job.id})" class="w-full bg-slate-900 hover:bg-indigo-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer shadow">
+          <button type="button" onclick="openModalLamar('${job.id}')" class="w-full bg-slate-900 hover:bg-indigo-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer shadow">
             Lamar Posisi Ini <span>➡️</span>
           </button>
         `;
@@ -204,8 +207,7 @@
     }
 
     window.openModalLamar = function(jobId) {
-      const jobs = getJobs();
-      selectedJobForApply = jobs.find(j => j.id === jobId);
+      selectedJobForApply = cachedJobs.find(j => j.id === jobId);
       if (selectedJobForApply) {
         document.getElementById('modal-job-title').innerText = `Posisi: ${selectedJobForApply.title}`;
         document.getElementById('modal-lamar').classList.remove('hidden');
@@ -226,17 +228,17 @@
         const fileInput = document.getElementById(fileInputId);
         const file = fileInput && fileInput.files ? fileInput.files[0] : null;
         if(!file) return null;
-        return { name: file.name, url: URL.createObjectURL(file) };
+        return { name: file.name, size: (file.size / 1024).toFixed(1) + ' KB' };
       };
 
       const newApplicant = {
-        id: Date.now(),
         jobTitle: selectedJobForApply ? selectedJobForApply.title : "Posisi Pekerjaan",
         name: document.getElementById('applicant_name').value,
         phone: document.getElementById('applicant_phone').value,
         email: document.getElementById('applicant_email').value,
         status: 'Submitted',
         interview: null,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         files: {
           cv: getFileObj('file_cv'),
           ktp: getFileObj('file_ktp'),
@@ -248,12 +250,14 @@
         }
       };
 
-      let applicants = getApplicants();
-      applicants.push(newApplicant);
-      localStorage.setItem('corp_applicants', JSON.stringify(applicants));
-
-      alert("Berhasil! Berkas lamaran Anda telah dikirim ke HRD.");
-      closeModalLamar();
+      db.collection('applicants').add(newApplicant)
+        .then(() => {
+          alert("Berhasil! Berkas lamaran Anda telah terkirim secara online ke HRD.");
+          closeModalLamar();
+        })
+        .catch(err => {
+          alert("Gagal mengirim lamaran: " + err.message);
+        });
     };
 
     window.checkStatusByPhone = function() {
@@ -266,55 +270,59 @@
         return;
       }
 
-      const applicants = getApplicants();
-      const matchedApps = applicants.filter(app => app.phone === phoneInput);
+      db.collection('applicants').where('phone', '==', phoneInput).get()
+        .then(snapshot => {
+          resultCard.classList.remove('hidden');
+          resultContent.innerHTML = "";
 
-      resultCard.classList.remove('hidden');
-      resultContent.innerHTML = "";
+          if(snapshot.empty) {
+            resultContent.innerHTML = `<div class="text-center py-6 text-slate-500">⚠️ Tidak ditemukan data lamaran dengan Nomor HP <b>${phoneInput}</b>.</div>`;
+            return;
+          }
 
-      if(matchedApps.length === 0) {
-        resultContent.innerHTML = `<div class="text-center py-6 text-slate-500">⚠️ Tidak ditemukan data lamaran dengan Nomor HP <b>${phoneInput}</b>.</div>`;
-        return;
-      }
+          snapshot.forEach(doc => {
+            const app = doc.data();
+            let statusBadge = app.status === 'Submitted' 
+              ? '<span class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold">Menunggu Review HRD</span>'
+              : app.status === 'Interview'
+              ? '<span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">Panggilan Interview Aktif</span>'
+              : app.status === 'Accepted'
+              ? '<span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">Diterima Kerja (Hired)</span>'
+              : '<span class="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-bold">Lamaran Ditolak</span>';
 
-      matchedApps.forEach(app => {
-        let statusBadge = app.status === 'Submitted' 
-          ? '<span class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold">Menunggu Review HRD</span>'
-          : app.status === 'Interview'
-          ? '<span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">Panggilan Interview Aktif</span>'
-          : app.status === 'Accepted'
-          ? '<span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">Diterima Kerja (Hired)</span>'
-          : '<span class="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-bold">Lamaran Ditolak</span>';
+            let interviewBox = app.interview ? `
+              <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl space-y-2">
+                <h4 class="font-bold text-blue-900 text-sm">🗓️ Jadwal Interview Resmi</h4>
+                <div class="text-xs text-slate-700 space-y-1.5 pl-4">
+                  <p><b>Waktu:</b> <span class="text-indigo-700 font-semibold">${app.interview.date}</span></p>
+                  <p><b>Lokasi/Link:</b> ${app.interview.location}</p>
+                  ${app.interview.notes ? `<p><b>Catatan:</b> ${app.interview.notes}</p>` : ''}
+                </div>
+              </div>
+            ` : '';
 
-        let interviewBox = app.interview ? `
-          <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl space-y-2">
-            <h4 class="font-bold text-blue-900 text-sm">🗓️ Jadwal Interview Resmi</h4>
-            <div class="text-xs text-slate-700 space-y-1.5 pl-4">
-              <p><b>Waktu:</b> <span class="text-indigo-700 font-semibold">${app.interview.date}</span></p>
-              <p><b>Lokasi/Link:</b> ${app.interview.location}</p>
-              ${app.interview.notes ? `<p><b>Catatan:</b> ${app.interview.notes}</p>` : ''}
-            </div>
-          </div>
-        ` : '';
-
-        const div = document.createElement('div');
-        div.className = "p-5 bg-slate-50 rounded-xl border border-slate-200 space-y-3";
-        div.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div>
-              <span class="text-xs text-indigo-600 font-semibold uppercase">${app.jobTitle}</span>
-              <h4 class="font-bold text-slate-800 text-lg">${app.name}</h4>
-            </div>
-            <div>${statusBadge}</div>
-          </div>
-          <div class="text-xs text-slate-500 grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
-            <div>Email: ${app.email}</div>
-            <div>No. HP: ${app.phone}</div>
-          </div>
-          ${interviewBox}
-        `;
-        resultContent.appendChild(div);
-      });
+            const div = document.createElement('div');
+            div.className = "p-5 bg-slate-50 rounded-xl border border-slate-200 space-y-3";
+            div.innerHTML = `
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-xs text-indigo-600 font-semibold uppercase">${app.jobTitle}</span>
+                  <h4 class="font-bold text-slate-800 text-lg">${app.name}</h4>
+                </div>
+                <div>${statusBadge}</div>
+              </div>
+              <div class="text-xs text-slate-500 grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
+                <div>Email: ${app.email}</div>
+                <div>No. HP: ${app.phone}</div>
+              </div>
+              ${interviewBox}
+            `;
+            resultContent.appendChild(div);
+          });
+        })
+        .catch(err => {
+          alert("Terjadi kesalahan saat mengecek status: " + err.message);
+        });
     };
 
     window.closeStatusResult = function() {
