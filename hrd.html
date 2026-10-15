@@ -266,23 +266,24 @@
     }
 
     // Fungsi Hapus Lowongan yang Diperbarui dan Diuji Aman
-    window.deleteJob = function(jobId) {
-      if (!jobId) {
-        alert("ID Lowongan tidak valid.");
-        return;
-      }
-      
-      if (confirm("Yakin ingin menghapus lowongan ini dari sistem online?")) {
-        db.collection('jobs').doc(jobId).delete()
-          .then(() => {
-            console.log("Lowongan berhasil dihapus:", jobId);
-          })
-          .catch(err => {
-            alert("Gagal menghapus lowongan: " + err.message);
-            console.error("Error deleting job:", err);
-          });
-      }
-    };
+   window.deleteJob = function(jobId) {
+  if (!jobId) {
+    alert("ID Lowongan tidak valid.");
+    return;
+  }
+  
+  if (confirm("Yakin ingin menghapus lowongan ini dari sistem online?")) {
+    db.collection('jobs').doc(jobId).delete()
+      .then(() => {
+        alert("Lowongan berhasil dihapus dari database online!");
+      })
+      .catch(err => {
+        // Ini akan memunculkan pesan error asli dari Firebase jika akses ditolak
+        alert("Gagal menghapus lowongan!\nPesan Error: " + err.message);
+        console.error("Error deleting job:", err);
+      });
+  }
+};
 
     function renderHRDTable() {
       const tbody = document.getElementById('applicant-table-body');
