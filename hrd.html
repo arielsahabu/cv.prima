@@ -16,11 +16,6 @@
           <span class="text-2xl">🔒</span>
           <span class="font-bold text-xl tracking-tight">CorpCareer - Panel HRD (Admin)</span>
         </div>
-        <div>
-          <a href="pelamar.html" target="_blank" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg font-medium transition-colors">
-            🌐 Buka Panel Pelamar
-          </a>
-        </div>
       </div>
     </div>
   </nav>
@@ -32,7 +27,7 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold text-slate-800">Dashboard Rekrutmen HRD</h1>
-        <p class="text-slate-500 text-sm">Kelola lowongan aktif, buka berkas pelamar, dan atur jadwal interview.</p>
+        <p class="text-slate-500 text-sm">Kelola lowongan aktif, buka berkas pelamar, dan atur jadwal interview secara real-time.</p>
       </div>
       <button type="button" onclick="openModalCreateJob()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-md cursor-pointer">
         <span>➕</span> Buat Lowongan Baru
@@ -149,7 +144,7 @@
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex justify-between items-center">
         <h2 class="font-bold text-slate-800">Daftar Berkas Pelamar Masuk</h2>
-        <span class="text-xs text-slate-500">Real-time Sync with Pelamar Panel</span>
+        <span class="text-xs text-slate-500">Real-time Sync Active</span>
       </div>
       
       <div class="overflow-x-auto">
@@ -186,30 +181,7 @@
     function getApplicants() {
       let apps = localStorage.getItem('corp_applicants');
       if (!apps) {
-        apps = [
-          {
-            id: 101,
-            jobTitle: "Frontend React Developer",
-            name: "Budi Santoso",
-            phone: "081234567890",
-            email: "budi@example.com",
-            status: "Interview",
-            interview: {
-              date: "Jumat, 17 Oktober 2026 pukul 10:00 WIB",
-              location: "Google Meet: meet.google.com/abc-defg-hij",
-              notes: "Harap menyiapkan portofolio project React.js serta dokumen asli."
-            },
-            files: {
-              cv: { name: "cv_budi.pdf", url: "#" },
-              ktp: { name: "ktp_budi.jpg", url: "#" },
-              photo: { name: "foto_budi.jpg", url: "#" },
-              ijazah: { name: "ijazah_budi.pdf", url: "#" },
-              experience: null,
-              bpjsKesehatan: { name: "bpjs_kes_budi.pdf", url: "#" },
-              bpjsTk: { name: "bpjs_tk_budi.pdf", url: "#" }
-            }
-          }
-        ];
+        apps = [];
         localStorage.setItem('corp_applicants', JSON.stringify(apps));
       }
       return JSON.parse(apps);
@@ -220,6 +192,14 @@
       updateStats();
     };
 
+    // Sinkronisasi otomatis jika ada perubahan data dari tab pelamar atau HRD lain
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'corp_applicants' || e.key === 'corp_jobs') {
+        renderHRDTable();
+        updateStats();
+      }
+    });
+
     function renderHRDTable() {
       const tbody = document.getElementById('applicant-table-body');
       if (!tbody) return;
@@ -227,7 +207,7 @@
       tbody.innerHTML = "";
 
       if(applicants.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Belum ada berkas lamaran yang masuk.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Belum ada berkas lamaran yang masuk. Silakan coba kirim lamaran dari panel pelamar.</td></tr>`;
         return;
       }
 
@@ -273,6 +253,7 @@
     }
 
     function countFiles(files) {
+      if (!files) return 0;
       let count = 0;
       if(files.cv) count++;
       if(files.ktp) count++;
@@ -332,13 +313,13 @@
       container.innerHTML = "";
 
       const fileItems = [
-        { label: "CV / Resume (PDF)", file: app.files.cv },
-        { label: "KTP / SIM", file: app.files.ktp },
-        { label: "Pas Foto", file: app.files.photo },
-        { label: "Ijazah & Transkrip Nilai", file: app.files.ijazah },
-        { label: "Surat Pengalaman Kerja", file: app.files.experience },
-        { label: "BPJS Kesehatan", file: app.files.bpjsKesehatan },
-        { label: "BPJS Ketenagakerjaan", file: app.files.bpjsTk },
+        { label: "CV / Resume (PDF)", file: app.files?.cv },
+        { label: "KTP / SIM", file: app.files?.ktp },
+        { label: "Pas Foto", file: app.files?.photo },
+        { label: "Ijazah & Transkrip Nilai", file: app.files?.ijazah },
+        { label: "Surat Pengalaman Kerja", file: app.files?.experience },
+        { label: "BPJS Kesehatan", file: app.files?.bpjsKesehatan },
+        { label: "BPJS Ketenagakerjaan", file: app.files?.bpjsTk },
       ];
 
       fileItems.forEach(item => {
