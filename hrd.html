@@ -191,7 +191,7 @@
 
   <script>
     // ==========================================
-    // KONFIGURASI FIREBASE (HARUS SAMA PERSIS DENGAN PELAMAR.HTML)
+    // KONFIGURASI FIREBASE ANDA
     // ==========================================
    const firebaseConfig = {
   apiKey: "AIzaSyDTuxZWU_qVS7u72dKh015MqxMiypWai84",
@@ -266,11 +266,22 @@
       });
     }
 
+    // Fungsi Hapus Lowongan yang Diperbarui dan Diuji Aman
     window.deleteJob = function(jobId) {
-      if(confirm("Yakin ingin menghapus lowongan ini dari sistem online?")) {
+      if (!jobId) {
+        alert("ID Lowongan tidak valid.");
+        return;
+      }
+      
+      if (confirm("Yakin ingin menghapus lowongan ini dari sistem online?")) {
         db.collection('jobs').doc(jobId).delete()
-          .then(() => alert("Lowongan berhasil dihapus."))
-          .catch(err => alert("Gagal menghapus: " + err.message));
+          .then(() => {
+            console.log("Lowongan berhasil dihapus:", jobId);
+          })
+          .catch(err => {
+            alert("Gagal menghapus lowongan: " + err.message);
+            console.error("Error deleting job:", err);
+          });
       }
     };
 
